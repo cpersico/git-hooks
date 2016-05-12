@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """
 no more embarrasing "removed pdb, sorry" commits
-checks for print statements
+checks for prints
 uses git grep, be careful to check the docs since some regex patterns will not
 apply.
 
@@ -14,7 +14,6 @@ notice the exclusion of the .py extension
 
 import re
 import sys
-from pprint import pprint as pp
 from collections import namedtuple, defaultdict
 from subprocess import Popen, PIPE
 
@@ -65,23 +64,35 @@ The threshold should be ~500 steps per regex, max or maybe less.
 """
 VALIDATIONS = {
     'git_grep': (
+        GitGrepPCall(
+            'traceback_check',
+            "i?pdb[ .;]",
+            'En'),
 
-        GitGrepPCall('traceback_check',"i?pdb[ .;]", 'En'),
+        GitGrepPCall(
+            'print_check_py2_literal',
+            "print[\'\" ]{1,3}[a-zA-Z]+[\'\"]{1,3}",
+            'En'),
+        GitGrepPCall(
+            'print_check_py2_var',
+            "#?print [a-zA-Z0-9_]+$",
+            'En'),
 
-        GitGrepPCall('print_check_py2_literal', "print[\'\" ]{1,3}[a-zA-Z]+[\'\"]{1,3}", 'En'),
-        GitGrepPCall('print_check_py2_var', "#?print [a-zA-Z0-9_]+$", 'En'),
-        
-
-        GitGrepPCall('print_check_py3_literal', "print\([\'\"]{1,3}[a-zA-Z0-9_ ]+[\'\"]{1,3}\)", 'En'),
-        GitGrepPCall('print_check_py3_var', "print\([a-zA-Z0-9_]+\)",'En'),
-     
+        GitGrepPCall(
+            'print_check_py3_literal',
+            "print\([\'\"]{1,3}[a-zA-Z0-9_ ]+[\'\"]{1,3}\)",
+            'En'),
+        GitGrepPCall(
+            'print_check_py3_var',
+            "print\([a-zA-Z0-9_]+\)",
+            'En'),
         )
     }
 
 # Validation type -> command parsing
 COMMANDS = {
     'git_grep': (
-        'git', 
+        'git',
         'grep',
         ),
     }
@@ -94,8 +105,10 @@ PARSERS = {
 ERROR_PARSERS = {
     'git_grep': (
             parse_git_grep_errors,
-            re.compile(r"(?P<filename>[\w]+.[\w]+):(?P<lno>[\d]+):(?P<error>.+)"),
-            )
+            re.compile(
+                r"(?P<filename>[\w]+.[\w]+):(?P<lno>[\d]+):(?P<error>.+)"
+            ),
+        )
     }
 
 REPORT_FORMAT = "File {filename} line {lineno}: {error}"
